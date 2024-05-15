@@ -60,13 +60,50 @@ namespace JsonParser
             {
                 try
                 {
-                    // Attempt to parse the JSON (basic validation)
-                    ParseJsonObject(json);
-                    return true;
+                    // Remove outer braces to isolate the object content
+                    string objectContent = json.Substring(1, json.Length - 2).Trim();
+
+                    // Split the object content into key-value pairs
+                    string[] keyValuePairs = objectContent.Split(',');
+
+                    foreach (string pair in keyValuePairs)
+                    {
+                        // Split each pair into key and value
+                        int colonIndex = pair.IndexOf(':');
+                        if (colonIndex == -1)
+                        {
+                            // Invalid key-value pair format (missing colon)
+                            return false;
+                        }
+
+                        string key = pair.Substring(0, colonIndex).Trim();
+                        string value = pair.Substring(colonIndex + 1).Trim();
+
+                        // Validate key and value format (must be enclosed in double quotes)
+                        if (!(key.StartsWith("\"") && key.EndsWith("\"")) ||
+                            !(value.StartsWith("\"") && value.EndsWith("\"")))
+                        {
+                            // Key or value is not enclosed in double quotes
+                            return false;
+                        }
+
+                        // Remove enclosing double quotes from key and value
+                        key = key.Substring(1, key.Length - 2);
+                        value = value.Substring(1, value.Length - 2);
+
+                        // Validate key and value (should not be empty)
+                        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+                        {
+                            // Empty key or value
+                            return false;
+                        }
+                    }
+
+                    return true; // JSON object is valid
                 }
                 catch (Exception)
                 {
-                    // Parsing failed, JSON is invalid
+                    // Parsing or validation failed
                     return false;
                 }
             }
