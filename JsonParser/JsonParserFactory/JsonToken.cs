@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JsonParser.JsonToken
+namespace JsonParserFactory
 {
     // Define the possible types of tokens in JSON
     public enum JsonTokenType
