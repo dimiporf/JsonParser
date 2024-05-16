@@ -79,22 +79,27 @@ namespace JsonParser
                         string key = pair.Substring(0, colonIndex).Trim();
                         string value = pair.Substring(colonIndex + 1).Trim();
 
-                        // Validate key and value format (must be enclosed in double quotes)
-                        if (!(key.StartsWith("\"") && key.EndsWith("\"")) ||
-                            !(value.StartsWith("\"") && value.EndsWith("\"")))
+                        // Validate key format (must be enclosed in double quotes)
+                        if (!(key.StartsWith("\"") && key.EndsWith("\"")))
                         {
-                            // Key or value is not enclosed in double quotes
+                            // Key is not enclosed in double quotes
                             return false;
                         }
 
-                        // Remove enclosing double quotes from key and value
+                        // Remove enclosing double quotes from key
                         key = key.Substring(1, key.Length - 2);
-                        value = value.Substring(1, value.Length - 2);
 
-                        // Validate key and value (should not be empty)
-                        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+                        // Validate value format
+                        if (!IsValidValue(value))
                         {
-                            // Empty key or value
+                            // Invalid value format
+                            return false;
+                        }
+
+                        // Key should not be empty
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            // Empty key
                             return false;
                         }
                     }
@@ -111,37 +116,37 @@ namespace JsonParser
             return false; // JSON format is invalid
         }
 
-        // Method to parse a JSON object (basic implementation)
-        static void ParseJsonObject(string json)
+        // Method to validate JSON value
+        static bool IsValidValue(string value)
         {
-            int depth = 0;
+            // Trim whitespace characters from the value
+            value = value.Trim();
 
-            // Iterate through each character in the JSON string
-            for (int i = 0; i < json.Length; i++)
+            // Check if the value is a string (enclosed in double quotes)
+            if (value.StartsWith("\"") && value.EndsWith("\""))
             {
-                char c = json[i];
-
-                if (c == '{')
-                {
-                    depth++;
-                }
-                else if (c == '}')
-                {
-                    depth--;
-
-                    // If depth becomes negative, it means invalid nesting
-                    if (depth < 0)
-                    {
-                        throw new Exception("Invalid JSON object");
-                    }
-                }
+                return true; // Valid string value
             }
 
-            // After iterating through all characters, depth should be zero for valid JSON
-            if (depth != 0)
+            // Check if the value is a boolean (true or false)
+            if (value == "true" || value == "false")
             {
-                throw new Exception("Invalid JSON object");
+                return true; // Valid boolean value
             }
+
+            // Check if the value is null
+            if (value == "null")
+            {
+                return true; // Valid null value
+            }
+
+            // Check if the value is numeric
+            if (double.TryParse(value, out _))
+            {
+                return true; // Valid numeric value
+            }
+
+            return false; // Invalid value format
         }
     }
 }
