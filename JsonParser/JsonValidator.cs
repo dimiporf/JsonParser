@@ -41,13 +41,15 @@ namespace JsonParser
             // Check if the value is an object (starts with '{' and ends with '}')
             if (value.StartsWith("{") && value.EndsWith("}"))
             {
-                return JsonParser.IsValidJson(value); // Recursively validate nested object
+                // Validate nested object using JsonParser
+                return JsonParser.IsValidJson(value, out _);
             }
 
             // Check if the value is an array (starts with '[' and ends with ']')
             if (value.StartsWith("[") && value.EndsWith("]"))
             {
-                return IsValidArray(value); // Validate array
+                // Validate array
+                return IsValidArray(value);
             }
 
             return false; // Invalid value format
@@ -56,7 +58,10 @@ namespace JsonParser
         // Method to validate JSON array
         private static bool IsValidArray(string array)
         {
+            // Trim whitespace characters from the array
             array = array.Trim();
+
+            // Check if the array starts with '[' and ends with ']'
             if (array.Length < 2 || array[0] != '[' || array[^1] != ']')
             {
                 return false; // Not a valid array
@@ -68,12 +73,13 @@ namespace JsonParser
             // Handle empty array
             if (string.IsNullOrWhiteSpace(arrayContent))
             {
-                return true;
+                return true; // Valid empty array
             }
 
             // Split the array content into values
             var values = SplitArrayValues(arrayContent);
 
+            // Validate each value in the array
             foreach (var value in values)
             {
                 if (!IsValidValue(value))
@@ -97,6 +103,7 @@ namespace JsonParser
             {
                 char c = arrayContent[i];
 
+                // Handle nested objects and arrays
                 if (c == '{')
                 {
                     braceDepth++;
@@ -115,11 +122,13 @@ namespace JsonParser
                 }
                 else if (c == ',' && braceDepth == 0 && bracketDepth == 0)
                 {
+                    // Add the value to the list
                     values.Add(arrayContent.Substring(startIndex, i - startIndex).Trim());
                     startIndex = i + 1;
                 }
             }
 
+            // Add the last value to the list
             values.Add(arrayContent.Substring(startIndex).Trim());
 
             return values;

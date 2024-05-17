@@ -8,9 +8,10 @@ namespace JsonParser
 {
     public class JsonParser
     {
-        // Method to validate JSON content
-        public static bool IsValidJson(string json)
+        // Method to validate JSON content and generate a structured log of the parsed contents
+        public static bool IsValidJson(string json, out string structuredLog)
         {
+            structuredLog = "";
             // Trim whitespace characters from the JSON content
             json = json.Trim();
 
@@ -25,11 +26,13 @@ namespace JsonParser
                     // Handle empty JSON object
                     if (string.IsNullOrWhiteSpace(objectContent))
                     {
+                        structuredLog = "{}";
                         return true;
                     }
 
                     // Parse key-value pairs
                     var keyValuePairs = SplitKeyValuePairs(objectContent);
+                    var parsedContents = new Dictionary<string, string>();
 
                     foreach (var pair in keyValuePairs)
                     {
@@ -67,8 +70,13 @@ namespace JsonParser
                             // Empty key
                             return false;
                         }
+
+                        // Add parsed key-value pair to the dictionary
+                        parsedContents.Add(key, value);
                     }
 
+                    // Generate structured log of the parsed contents
+                    structuredLog = FormatLog(parsedContents);
                     return true; // JSON object is valid
                 }
                 catch (Exception)
@@ -79,6 +87,18 @@ namespace JsonParser
             }
 
             return false; // JSON format is invalid
+        }
+
+        // Method to format the parsed JSON contents into a structured log
+        private static string FormatLog(Dictionary<string, string> parsedContents)
+        {
+            string log = "{\n";
+            foreach (var pair in parsedContents)
+            {
+                log += $"  \"{pair.Key}\": {pair.Value},\n";
+            }
+            log = log.TrimEnd(',', '\n') + "\n}";
+            return log;
         }
 
         // Method to split key-value pairs correctly, considering nested structures
@@ -111,11 +131,13 @@ namespace JsonParser
                 }
                 else if (c == ',' && braceDepth == 0 && bracketDepth == 0)
                 {
+                    // Add the key-value pair to the list
                     keyValuePairs.Add(objectContent.Substring(startIndex, i - startIndex).Trim());
                     startIndex = i + 1;
                 }
             }
 
+            // Add the last key-value pair to the list
             keyValuePairs.Add(objectContent.Substring(startIndex).Trim());
 
             return keyValuePairs;
