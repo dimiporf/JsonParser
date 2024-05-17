@@ -22,10 +22,16 @@ namespace JsonParser
                     // Remove outer braces to isolate the object content
                     string objectContent = json.Substring(1, json.Length - 2).Trim();
 
-                    // Split the object content into key-value pairs
-                    string[] keyValuePairs = objectContent.Split(',');
+                    // Handle empty JSON object
+                    if (string.IsNullOrWhiteSpace(objectContent))
+                    {
+                        return true;
+                    }
 
-                    foreach (string pair in keyValuePairs)
+                    // Parse key-value pairs
+                    var keyValuePairs = SplitKeyValuePairs(objectContent);
+
+                    foreach (var pair in keyValuePairs)
                     {
                         // Split each pair into key and value
                         int colonIndex = pair.IndexOf(':');
@@ -73,6 +79,46 @@ namespace JsonParser
             }
 
             return false; // JSON format is invalid
+        }
+
+        // Method to split key-value pairs correctly, considering nested structures
+        private static List<string> SplitKeyValuePairs(string objectContent)
+        {
+            var keyValuePairs = new List<string>();
+            int braceDepth = 0;
+            int bracketDepth = 0;
+            int startIndex = 0;
+
+            for (int i = 0; i < objectContent.Length; i++)
+            {
+                char c = objectContent[i];
+
+                if (c == '{')
+                {
+                    braceDepth++;
+                }
+                else if (c == '}')
+                {
+                    braceDepth--;
+                }
+                else if (c == '[')
+                {
+                    bracketDepth++;
+                }
+                else if (c == ']')
+                {
+                    bracketDepth--;
+                }
+                else if (c == ',' && braceDepth == 0 && bracketDepth == 0)
+                {
+                    keyValuePairs.Add(objectContent.Substring(startIndex, i - startIndex).Trim());
+                    startIndex = i + 1;
+                }
+            }
+
+            keyValuePairs.Add(objectContent.Substring(startIndex).Trim());
+
+            return keyValuePairs;
         }
     }
 }
