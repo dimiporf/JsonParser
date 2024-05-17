@@ -63,10 +63,10 @@ Clone this repository or download the source code directly.
 Ensure you have the .NET Core SDK installed on your machine. You can download it from the official .NET website.
 
 Clone this repository to your local machine:
-- `git clone https://github.com/your-username/your-repository.git`
+- `git clone https://github.com/dimiporf/JsonParser.git`
 
 Navigate to the directory containing the code files:
-- `cd your-repository`
+- `cd JsonParser`
 
 Compile the C# code using the following command:
 - `dotnet build`
