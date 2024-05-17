@@ -1,146 +1,118 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JsonParser
 {
-    public class JsonParser
+    /// <summary>
+    /// The JsonParser class provides methods for validating and parsing JSON content.
+    /// </summary>
+    public static class JsonParser
     {
-        // Method to validate JSON content and generate a structured log of the parsed contents
+        /// <summary>
+        /// Validates the provided JSON content and generates a structured log of the parsed contents.
+        /// </summary>
+        /// <param name="json">The JSON string to validate and parse.</param>
+        /// <param name="structuredLog">The structured log of the parsed JSON content.</param>
+        /// <returns>True if the JSON is valid, false otherwise.</returns>
         public static bool IsValidJson(string json, out string structuredLog)
         {
             structuredLog = "";
-            // Trim whitespace characters from the JSON content
-            json = json.Trim();
 
-            // Check if the JSON content starts with '{' and ends with '}'
-            if (json.StartsWith("{") && json.EndsWith("}"))
+            if (string.IsNullOrWhiteSpace(json))
             {
-                try
-                {
-                    // Remove outer braces to isolate the object content
-                    string objectContent = json.Substring(1, json.Length - 2).Trim();
+                return false; // Empty JSON
+            }
 
-                    // Handle empty JSON object
-                    if (string.IsNullOrWhiteSpace(objectContent))
-                    {
-                        structuredLog = "{}";
-                        return true;
-                    }
+            // Remove line breaks and extra whitespace within the JSON string
+            json = json.Replace("\n", "").Replace("\r", "").Replace("\t", "").Replace(" ", "");
 
-                    // Parse key-value pairs
-                    var keyValuePairs = SplitKeyValuePairs(objectContent);
-                    var parsedContents = new Dictionary<string, string>();
+            if (!IsJsonSyntaxValid(json))
+            {
+                return false; // Invalid JSON syntax
+            }
 
-                    foreach (var pair in keyValuePairs)
-                    {
-                        // Split each pair into key and value
-                        int colonIndex = pair.IndexOf(':');
-                        if (colonIndex == -1)
-                        {
-                            // Invalid key-value pair format (missing colon)
-                            return false;
-                        }
-
-                        string key = pair.Substring(0, colonIndex).Trim();
-                        string value = pair.Substring(colonIndex + 1).Trim();
-
-                        // Validate key format (must be enclosed in double quotes)
-                        if (!(key.StartsWith("\"") && key.EndsWith("\"")))
-                        {
-                            // Key is not enclosed in double quotes
-                            return false;
-                        }
-
-                        // Remove enclosing double quotes from key
-                        key = key.Substring(1, key.Length - 2);
-
-                        // Validate value format
-                        if (!JsonValidator.IsValidValue(value))
-                        {
-                            // Invalid value format
-                            return false;
-                        }
-
-                        // Key should not be empty
-                        if (string.IsNullOrEmpty(key))
-                        {
-                            // Empty key
-                            return false;
-                        }
-
-                        // Add parsed key-value pair to the dictionary
-                        parsedContents.Add(key, value);
-                    }
-
-                    // Generate structured log of the parsed contents
-                    structuredLog = FormatLog(parsedContents);
-                    return true; // JSON object is valid
-                }
-                catch (Exception)
-                {
-                    // Parsing or validation failed
-                    return false;
-                }
+            if (json.StartsWith("[") && json.EndsWith("]"))
+            {
+                return HandleArray(json, out structuredLog);
+            }
+            else if (json.StartsWith("{") && json.EndsWith("}"))
+            {
+                return HandleObject(json, out structuredLog);
             }
 
             return false; // JSON format is invalid
         }
 
-        // Method to format the parsed JSON contents into a structured log
-        private static string FormatLog(Dictionary<string, string> parsedContents)
+        // Method to handle JSON arrays
+        private static bool HandleArray(string json, out string structuredLog)
         {
-            string log = "{\n";
-            foreach (var pair in parsedContents)
+            structuredLog = "";
+            json = json.Substring(1, json.Length - 2).Trim();
+
+            if (string.IsNullOrWhiteSpace(json))
             {
-                log += $"  \"{pair.Key}\": {pair.Value},\n";
+                structuredLog = "[]"; // Empty array
+                return true;
             }
-            log = log.TrimEnd(',', '\n') + "\n}";
-            return log;
+
+            var values = JsonSplitter.SplitArrayValues(json);
+
+            structuredLog = JsonFormatter.FormatArrayLog(values);
+            return true;
         }
 
-        // Method to split key-value pairs correctly, considering nested structures
-        private static List<string> SplitKeyValuePairs(string objectContent)
+        // Method to handle JSON objects
+        private static bool HandleObject(string json, out string structuredLog)
         {
-            var keyValuePairs = new List<string>();
-            int braceDepth = 0;
-            int bracketDepth = 0;
-            int startIndex = 0;
+            structuredLog = "";
+            json = json.Substring(1, json.Length - 2).Trim();
 
-            for (int i = 0; i < objectContent.Length; i++)
+            if (string.IsNullOrWhiteSpace(json))
             {
-                char c = objectContent[i];
+                structuredLog = "{}"; // Empty object
+                return true;
+            }
 
-                if (c == '{')
+            var keyValuePairs = JsonSplitter.SplitKeyValuePairs(json);
+            var parsedContents = new Dictionary<string, string>();
+
+            foreach (var pair in keyValuePairs)
+            {
+                int colonIndex = pair.IndexOf(':');
+                if (colonIndex == -1) return false;
+
+                string key = pair.Substring(0, colonIndex).Trim();
+                string value = pair.Substring(colonIndex + 1).Trim();
+
+                if (!(key.StartsWith("\"") && key.EndsWith("\""))) return false;
+                key = key.Substring(1, key.Length - 2);
+
+                if (!string.IsNullOrEmpty(key)) // Skip invalid or empty keys
                 {
-                    braceDepth++;
-                }
-                else if (c == '}')
-                {
-                    braceDepth--;
-                }
-                else if (c == '[')
-                {
-                    bracketDepth++;
-                }
-                else if (c == ']')
-                {
-                    bracketDepth--;
-                }
-                else if (c == ',' && braceDepth == 0 && bracketDepth == 0)
-                {
-                    // Add the key-value pair to the list
-                    keyValuePairs.Add(objectContent.Substring(startIndex, i - startIndex).Trim());
-                    startIndex = i + 1;
+                    parsedContents[key] = value;
                 }
             }
 
-            // Add the last key-value pair to the list
-            keyValuePairs.Add(objectContent.Substring(startIndex).Trim());
+            structuredLog = JsonFormatter.FormatLog(parsedContents);
+            return true;
+        }
 
-            return keyValuePairs;
+        // Method to check if JSON syntax is valid
+        private static bool IsJsonSyntaxValid(string json)
+        {
+            try
+            {
+                // Attempt to parse the JSON string
+                // If parsing succeeds, JSON syntax is valid
+                JToken.Parse(json);
+                return true;
+            }
+            catch (Exception)
+            {
+                // Parsing failed, JSON syntax is invalid
+                return false;
+            }
         }
     }
 }

@@ -7,48 +7,44 @@ namespace JsonParser
     {
         static void Main(string[] args)
         {
-            bool exitRequested = false;
-
-            while (!exitRequested)
+            // Main loop to handle user input for JSON file paths
+            while (true)
             {
-                // Prompt user to input file path
-                Console.WriteLine("Enter the path to the file containing JSON (or type 'exit' to quit):");
+                Console.Write("Enter the path to the JSON file or 'exit' to quit: ");
                 string input = Console.ReadLine();
 
+                // Exit the loop if the user types 'exit'
                 if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 {
-                    exitRequested = true;
-                    continue;
+                    break;
                 }
 
-                try
+                // Read the JSON content from the provided file path
+                if (File.Exists(input))
                 {
-                    // Read content of the file
                     string jsonContent = File.ReadAllText(input);
-
-                    // Validate JSON content and get the structured log
                     if (JsonParser.IsValidJson(jsonContent, out string structuredLog))
                     {
-                        // Display success message and structured log
-                        Console.WriteLine("The JSON in the provided file is valid. Here are the contents:");
+                        Console.WriteLine("The JSON in the provided file is valid. Here are the results:");
                         Console.WriteLine(structuredLog);
                     }
                     else
                     {
-                        // Display invalid JSON message
-                        Console.WriteLine("The JSON in the file is invalid.");
+                        Console.WriteLine("Invalid JSON");
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    // Display error message
-                    Console.WriteLine($"An error occurred: {ex.Message}");
+                    Console.WriteLine("File not found. Please try again.");
+                }
+
+                // Prompt the user to press any key to exit or continue
+                Console.WriteLine("Press any key to continue or type 'exit' to quit...");
+                if (Console.ReadKey().KeyChar == 'e')
+                {
+                    break;
                 }
             }
-
-            // Wait for user input before exiting
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
         }
     }
 }
